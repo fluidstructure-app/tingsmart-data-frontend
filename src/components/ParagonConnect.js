@@ -14,7 +14,6 @@ import {
     Checkbox,
     FormControlLabel,
     TextField,
-    MenuItem,
     Table,
     TableBody,
     TableCell,
@@ -22,7 +21,15 @@ import {
     TableHead,
     TableRow,
     TableSortLabel,
+    Grid,
+    IconButton,
 } from "@mui/material"; // Using Material-UI for styling
+import {
+    Lock as LockIcon,
+    Link as LinkIcon,
+    PlayArrow as PlayArrowIcon,
+    Tune as TuneIcon,
+} from "@mui/icons-material"; // Icons for buttons
 
 export default function ParagonConnect() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -37,13 +44,6 @@ export default function ParagonConnect() {
     const [visibleColumns, setVisibleColumns] = useState([]); // Columns to display
     const [filters, setFilters] = useState({}); // Filters for each column
     const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" }); // Sorting configuration
-
-    // Sample JSON data (replace with actual workflowResponse data)
-    const sampleData = [
-        { id: 1, name: "John Doe", age: 28, status: "Active" },
-        { id: 2, name: "Jane Smith", age: 34, status: "Inactive" },
-        { id: 3, name: "Sam Green", age: 45, status: "Active" },
-    ];
 
     // Extract columns from the first row of data
     const extractColumns = (data) => {
@@ -75,7 +75,8 @@ export default function ParagonConnect() {
 
             await paragon.authenticate(
                 '7dfb0cd4-7ab7-4441-bebc-db2035bf97f3',
-            'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NSIsImlhdCI6MTczODY2NTc5NSwiZXhwIjoxNzM4NzUyMTk1fQ.L7rlLWMBSCELHo3PC-r_vtodehKIa5O3w1PkqHU5fFcl3Sa7yuD8UtU6EARdGgUIoOReCEANgHo_WgZQGNSK2k8hH10gzJ7CqOYxP6mgo5LllxuPsNEH74H763oUADvd6OqkaKMkfV_51AtAxewfKyETb3K1HCTVGqY7pdJqlJZCLM4QCj0o8ID0g_FPKW7jPDJkuLqIs6zA8q5gr_SVWuE8lgO1qTRZtX1gMkpzEQqEIj-XF7bTn3AV6cGAzHmxXkDo3w43g29QOj5hyoY_HYWmnvvCzdedSIyMaDYJBk4aL9YP3l4MtvpARpCpDmhtvzPIg1vx4qku-npRd1CvCTzP9PJmFoxBx7PW2fg7Ow5TjCnKFRCztYUAsXGHoeuvYi0ydbYNsLL4Y2A4Y5LtCL5k6EPYukuPKbELhWk6ynZiBB_muZdD4PqpX_lbCwo9OS4Rfl8rmBlNPc-vnjewLPicNN2UzDsrYxTrajjhLjCG32eqql9OlhH6qrB5153WNr-1vrxT_lVnlvFOo16iYhYE-WQRQCYlqEWCaicUF_jECwFfGATnhWwIS4GDUXdqe9vdwVPsxoBKgDv5Lj23jcnXi9agJT9dPSiDyv4pfxwJeMx9SKRikl9amJB9CQqlZHyCofXYih74vA0NeuZ5cB5FuDW9eTwRAKgVfOsPFkc');
+                'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NSIsImlhdCI6MTczODY2NTc5NSwiZXhwIjoxNzM4NzUyMTk1fQ.L7rlLWMBSCELHo3PC-r_vtodehKIa5O3w1PkqHU5fFcl3Sa7yuD8UtU6EARdGgUIoOReCEANgHo_WgZQGNSK2k8hH10gzJ7CqOYxP6mgo5LllxuPsNEH74H763oUADvd6OqkaKMkfV_51AtAxewfKyETb3K1HCTVGqY7pdJqlJZCLM4QCj0o8ID0g_FPKW7jPDJkuLqIs6zA8q5gr_SVWuE8lgO1qTRZtX1gMkpzEQqEIj-XF7bTn3AV6cGAzHmxXkDo3w43g29QOj5hyoY_HYWmnvvCzdedSIyMaDYJBk4aL9YP3l4MtvpARpCpDmhtvzPIg1vx4qku-npRd1CvCTzP9PJmFoxBx7PW2fg7Ow5TjCnKFRCztYUAsXGHoeuvYi0ydbYNsLL4Y2A4Y5LtCL5k6EPYukuPKbELhWk6ynZiBB_muZdD4PqpX_lbCwo9OS4Rfl8rmBlNPc-vnjewLPicNN2UzDsrYxTrajjhLjCG32eqql9OlhH6qrB5153WNr-1vrxT_lVnlvFOo16iYhYE-WQRQCYlqEWCaicUF_jECwFfGATnhWwIS4GDUXdqe9vdwVPsxoBKgDv5Lj23jcnXi9agJT9dPSiDyv4pfxwJeMx9SKRikl9amJB9CQqlZHyCofXYih74vA0NeuZ5cB5FuDW9eTwRAKgVfOsPFkc'
+            );
             setIsAuthenticated(true);
             showSnackbar("Authentication successful!");
         } catch (err) {
@@ -111,8 +112,8 @@ export default function ParagonConnect() {
                 key2: "value2"
             });
 
-            setWorkflowResponse(response);
-            extractColumns(sampleData); // Replace with response data
+            setWorkflowResponse(response['data']);
+            extractColumns(response['data']); // Replace with response data
             setError(null);
             showSnackbar("Workflow executed successfully!");
         } catch (err) {
@@ -149,7 +150,7 @@ export default function ParagonConnect() {
 
     // Apply filters and sorting to data
     const getFilteredAndSortedData = () => {
-        let data = sampleData; // Replace with workflowResponse data
+        let data = workflowResponse || [];
 
         // Apply filters
         if (Object.keys(filters).length > 0) {
@@ -182,43 +183,50 @@ export default function ParagonConnect() {
                 Paragon Integration
             </Typography>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={authenticateParagon}
-                    disabled={loading || isAuthenticated}
-                >
-                    {loading ? <CircularProgress size={24} /> : "Authenticate"}
-                </Button>
-
-                <Button
-                    variant="contained"
-                    color="secondary"
-                    onClick={connectGoogleSheets}
-                    disabled={!isAuthenticated || loading}
-                >
-                    Connect Google Sheets
-                </Button>
-
-                <Button
-                    variant="contained"
-                    color="success"
-                    onClick={executeWorkflow}
-                    disabled={!isAuthenticated || loading}
-                >
-                    {loading ? <CircularProgress size={24} /> : "Execute Workflow"}
-                </Button>
-
-                <Button
-                    variant="outlined"
-                    color="primary"
-                    onClick={() => setConfigDialogOpen(true)}
-                    disabled={!workflowResponse}
-                >
-                    Configure Table
-                </Button>
-            </div>
+            <Grid container spacing={2} justifyContent="center" style={{ marginBottom: "20px" }}>
+                <Grid item>
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        startIcon={<LockIcon />}
+                        onClick={authenticateParagon}
+                        disabled={loading || isAuthenticated}
+                    >
+                        {loading ? <CircularProgress size={24} /> : "Authenticate"}
+                    </Button>
+                </Grid>
+                <Grid item>
+                    <Button
+                        variant="contained"
+                        color="secondary"
+                        startIcon={<LinkIcon />}
+                        onClick={connectGoogleSheets}
+                        disabled={!isAuthenticated || loading}
+                    >
+                        Connect Sheets
+                    </Button>
+                </Grid>
+                <Grid item>
+                    <Button
+                        variant="contained"
+                        color="success"
+                        startIcon={<PlayArrowIcon />}
+                        onClick={executeWorkflow}
+                        disabled={!isAuthenticated || loading}
+                    >
+                        {loading ? <CircularProgress size={24} /> : "Run Workflow"}
+                    </Button>
+                </Grid>
+                <Grid item>
+                    <IconButton
+                        color="primary"
+                        onClick={() => setConfigDialogOpen(true)}
+                        disabled={!workflowResponse}
+                    >
+                        <TuneIcon />
+                    </IconButton>
+                </Grid>
+            </Grid>
 
             {error && (
                 <Alert severity="error" style={{ marginTop: "20px" }}>
@@ -232,7 +240,10 @@ export default function ParagonConnect() {
                         <TableHead>
                             <TableRow>
                                 {visibleColumns.map((column) => (
-                                    <TableCell key={column}>
+                                    <TableCell
+                                        key={column}
+                                        style={{ fontWeight: "bold", backgroundColor: "#f5f5f5" }}
+                                    >
                                         <TableSortLabel
                                             active={sortConfig.key === column}
                                             direction={sortConfig.direction}
