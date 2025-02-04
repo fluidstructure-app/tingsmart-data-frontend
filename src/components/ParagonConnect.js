@@ -1,5 +1,5 @@
 import { paragon } from "@useparagon/connect";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Button,
     CircularProgress,
@@ -14,6 +14,8 @@ import {
     Checkbox,
     FormControlLabel,
     TextField,
+    MenuItem,
+    Select,
     Table,
     TableBody,
     TableCell,
@@ -42,17 +44,26 @@ export default function ParagonConnect() {
     const [configDialogOpen, setConfigDialogOpen] = useState(false);
     const [columns, setColumns] = useState([]); // All available columns
     const [visibleColumns, setVisibleColumns] = useState([]); // Columns to display
-    const [filters, setFilters] = useState({}); // Filters for each column
+    const [filters, setFilters] = useState([]); // Filters for each column
     const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" }); // Sorting configuration
+    const [uniqueColumnValues, setUniqueColumnValues] = useState({}); // Unique values for each column
 
-    // Extract columns from the first row of data
-    const extractColumns = (data) => {
-        if (data.length > 0) {
-            const keys = Object.keys(data[0]);
+    // Extract columns and unique values from workflowResponse
+    useEffect(() => {
+        if (workflowResponse) {
+            const keys = Object.keys(workflowResponse[0]);
             setColumns(keys);
             setVisibleColumns(keys); // Show all columns by default
+
+            // Extract unique values for each column
+            const uniqueValues = {};
+            keys.forEach((key) => {
+                const values = workflowResponse.map((row) => row[key]);
+                uniqueValues[key] = [...new Set(values)]; // Remove duplicates
+            });
+            setUniqueColumnValues(uniqueValues);
         }
-    };
+    }, [workflowResponse]);
 
     // Show snackbar for success/error messages
     const showSnackbar = (message, severity = "success") => {
@@ -113,7 +124,6 @@ export default function ParagonConnect() {
             });
 
             setWorkflowResponse(response['data']);
-            extractColumns(response['data']); // Replace with response data
             setError(null);
             showSnackbar("Workflow executed successfully!");
         } catch (err) {
@@ -134,9 +144,22 @@ export default function ParagonConnect() {
         }
     };
 
-    // Handle filter change
-    const handleFilterChange = (column, value) => {
-        setFilters({ ...filters, [column]: value });
+    // Add a new filter
+    const addFilter = () => {
+        setFilters([...filters, { column: "", condition: "", value: "" }]);
+    };
+
+    // Update a filter
+    const updateFilter = (index, field, value) => {
+        const updatedFilters = [...filters];
+        updatedFilters[index][field] = value;
+        setFilters(updatedFilters);
+    };
+
+    // Remove a filter
+    const removeFilter = (index) => {
+        const updatedFilters = filters.filter((_, i) => i !== index);
+        setFilters(updatedFilters);
     };
 
     // Handle sorting
@@ -153,11 +176,24 @@ export default function ParagonConnect() {
         let data = workflowResponse || [];
 
         // Apply filters
-        if (Object.keys(filters).length > 0) {
+        if (filters.length > 0) {
             data = data.filter((row) =>
-                Object.entries(filters).every(([key, value]) =>
-                    String(row[key]).toLowerCase().includes(value.toLowerCase())
-                )
+                filters.every((filter) => {
+                    if (!filter.column || !filter.condition) return true;
+                    const columnValue = row[filter.column];
+                    switch (filter.condition) {
+                        case "equals":
+                            return columnValue == filter.value;
+                        case "contains":
+                            return String(columnValue).includes(filter.value);
+                        case "greaterThan":
+                            return columnValue > filter.value;
+                        case "lessThan":
+                            return columnValue < filter.value;
+                        default:
+                            return true;
+                    }
+                })
             );
         }
 
@@ -268,7 +304,7 @@ export default function ParagonConnect() {
                 </TableContainer>
             )}
 
-            <Dialog open={configDialogOpen} onClose={() => setConfigDialogOpen(false)}>
+            <Dialog open={configDialogOpen} onClose={() => setConfigDialogOpen(false)} maxWidth="md" fullWidth>
                 <DialogTitle>Configure Table</DialogTitle>
                 <DialogContent>
                     <Typography variant="h6" gutterBottom>
@@ -290,16 +326,72 @@ export default function ParagonConnect() {
                     <Typography variant="h6" gutterBottom style={{ marginTop: "20px" }}>
                         Filters
                     </Typography>
-                    {columns.map((column) => (
-                        <TextField
-                            key={column}
-                            label={`Filter by ${column}`}
-                            value={filters[column] || ""}
-                            onChange={(e) => handleFilterChange(column, e.target.value)}
-                            fullWidth
-                            margin="normal"
-                        />
+                    {filters.map((filter, index) => (
+                        <Grid container spacing={2} key={index} alignItems="center" style={{ marginBottom: "10px" }}>
+                            <Grid item xs={4}>
+                                <Select
+                                    value={filter.column}
+                                    onChange={(e) => updateFilter(index, "column", e.target.value)}
+                                    fullWidth
+                                    displayEmpty
+                                >
+                                    <MenuItem value="">Select Column</MenuItem>
+                                    {columns.map((column) => (
+                                        <MenuItem key={column} value={column}>
+                                            {column}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </Grid>
+                            <Grid item xs={3}>
+                                <Select
+                                    value={filter.condition}
+                                    onChange={(e) => updateFilter(index, "condition", e.target.value)}
+                                    fullWidth
+                                    displayEmpty
+                                >
+                                    <MenuItem value="">Select Condition</MenuItem>
+                                    <MenuItem value="equals">Equals</MenuItem>
+                                    <MenuItem value="contains">Contains</MenuItem>
+                                    <MenuItem value="greaterThan">Greater Than</MenuItem>
+                                    <MenuItem value="lessThan">Less Than</MenuItem>
+                                </Select>
+                            </Grid>
+                            <Grid item xs={4}>
+                                {filter.column && uniqueColumnValues[filter.column] && (
+                                    <Select
+                                        value={filter.value}
+                                        onChange={(e) => updateFilter(index, "value", e.target.value)}
+                                        fullWidth
+                                        displayEmpty
+                                    >
+                                        <MenuItem value="">Select Value</MenuItem>
+                                        {uniqueColumnValues[filter.column].map((value) => (
+                                            <MenuItem key={value} value={value}>
+                                                {value}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                )}
+                                {filter.column && !uniqueColumnValues[filter.column] && (
+                                    <TextField
+                                        fullWidth
+                                        value={filter.value}
+                                        onChange={(e) => updateFilter(index, "value", e.target.value)}
+                                        type={typeof workflowResponse[0][filter.column] === "number" ? "number" : "text"}
+                                    />
+                                )}
+                            </Grid>
+                            <Grid item xs={1}>
+                                <IconButton onClick={() => removeFilter(index)}>
+                                    <TuneIcon />
+                                </IconButton>
+                            </Grid>
+                        </Grid>
                     ))}
+                    <Button onClick={addFilter} variant="outlined" color="primary">
+                        Add Filter
+                    </Button>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setConfigDialogOpen(false)}>Close</Button>
